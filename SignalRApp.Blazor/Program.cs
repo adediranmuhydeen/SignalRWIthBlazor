@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
-builder.Services.AddScoped<IDiscount, Discount>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddResponseCompression(options =>
 {
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
@@ -33,7 +33,6 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.MapBlazorHub();
-app.MapHub<AppHub>("/appHub");
 app.MapHub<DiscountHub>("/discountHub");
 app.MapFallbackToPage("/_Host");
 

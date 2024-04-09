@@ -1,9 +1,21 @@
 ﻿
 namespace SignalRApp.Blazor.Infrastructure;
-
-public class Discount : IDiscount
+#nullable disable
+public class DiscountService : IDiscountService
 {
-    List<string> _codes = new() {"AA000000" };   
+    #region Fields
+    List<string> _codes = new List<string>();
+    #endregion
+
+    #region Public Methods
+    public string ConfirmDiscount(string code)
+    {
+        if (!_codes.Contains(code))
+        {
+            return "Invalid code";
+        }
+        return "Code is valid";
+    }    
 
     public List<string> GenerateDiscountCodesAsync(ushort numberOfCode, byte length)
     {
@@ -18,14 +30,31 @@ public class Discount : IDiscount
         }
         return _codes;
     }
-    private  string GenerateCode(List<string> _service, int length)
+    #endregion
+
+
+    #region Private Methods
+    private string GenerateCode(List<string> _service, int length)
     {
         int intLength = length - 2;
 
-        int num = int.Parse(_service[_service.Count - 1].Substring(2, intLength));
-        string myString = _service[_service.Count - 1];
-        char firstChar = myString[0];
-        char secondChar = myString[1];
+        int num ;
+        string myString;
+        char firstChar = char.MinValue;
+        char secondChar = char.MinValue;
+        if(_service.Count< 1)
+        {
+            num = 0;
+            firstChar = 'A';
+            secondChar = 'A';
+        }
+        else
+        {
+            num = int.Parse(_service[_service.Count - 1].Substring(2, intLength));
+            myString = _service[_service.Count - 1];
+            firstChar = myString[0];
+            secondChar = myString[1];
+        }
         if (num + 1 > 99999)
         {
             secondChar = (char)(secondChar + 1);
@@ -44,4 +73,5 @@ public class Discount : IDiscount
         var temp = (num + 1).ToString($"D{intLength}");
         return (firstChar.ToString() + secondChar.ToString() + temp);
     }
+    #endregion
 }

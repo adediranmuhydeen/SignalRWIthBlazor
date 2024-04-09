@@ -4,40 +4,69 @@
 @implements IAsyncDisposable
 
 
-<div class="from-group">
-    <label>
-        Count: <input @bind="numberOfCode"/>
-    </label>
+<div>
+    <div class="from-group">
+        <label>
+            Count: <input @bind="numberOfCode" />
+        </label>
+    </div>
+    <div class="from-group">
+        <label>
+            Length: <input @bind="length" />
+        </label>
+    </div>
+    <button @onclick="Send" disabled="@(IsConnected == false)">Request For Codes</button>
+    <hr />
+    <ul>
+        @foreach (string message in codes)
+        {
+            <li>
+                @message
+            </li>
+        }
+    </ul>
 </div>
-<div class="from-group">
-    <label>
-        Length: <input @bind="length" />
-    </label>
+<div>
+    <input @bind="discount" />
+    <button @onclick="SendCode" disabled="@(IsConnected == false)">Confirm code</button>
+    <hr />
+    <p>
+        @if (codes.Contains(discount))
+        {
+            <li>
+                Code is valid
+            </li>
+        }
+        else
+        {
+            <li>
+                Invalid code supplied
+            </li>
+        }
+    </p>
 </div>
-<button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
 
-<hr/>
-<ul>
-    @foreach(string message in codes)
-    {
-        <li>
-            @message
-        </li>
-    }
-</ul>
+
 
 @code {
     private HubConnection? hubConnection;
     private List<string> codes = new();
     private ushort? numberOfCode;
     private byte? length;
+    private string discount;
 
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri("/discountHub"))
         .WithAutomaticReconnect().Build();
-        hubConnection.On<ushort, byte>("GetDiscountCode", (numberOfCode, length) =>
-        {            
+        hubConnection.On<List<string>>("ReceiveMessage", (codesList) =>
+        {
+            codes = codesList;
+            InvokeAsync(StateHasChanged);
+        });
+        hubConnection.On<string>("ReceiveMessage", (myDiscount) =>
+        {
+            discount = myDiscount;
             InvokeAsync(StateHasChanged);
         });
 
@@ -48,7 +77,15 @@
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("ReceiveMessage", codes);
+            await hubConnection.SendAsync("GetDiscountCode", numberOfCode, length);
+        }
+    }
+
+    private async Task SendCode()
+    {
+        if(hubConnection is not null)
+        {
+            await hubConnection.InvokeAsync("ConFirmDicountCode", discount);
         }
     }
 
