@@ -5,14 +5,28 @@ namespace SignalRApp.Blazor.Hubs;
 
 public class DiscountHub : Hub
 {
-    private readonly IDiscount _discount;
-    public DiscountHub(IDiscount discount)
+    #region Fields
+    private readonly IDiscountService _service;
+    #endregion
+
+    #region Constructor
+    public DiscountHub(IDiscountService service)
     {
-        _discount = discount;
+        _service = service;
     }
+    #endregion
+
+    #region Public Methods
     public Task GetDiscountCode(ushort numberOfCode, byte length)
     {
-        var codes = _discount.GenerateDiscountCodesAsync(numberOfCode, length);
+        var codes = _service.GenerateDiscountCodesAsync(numberOfCode, length);
         return Clients.All.SendAsync("ReceiveMessage", codes);
     }
+    
+    public Task ConFirmDicountCode(string code)
+    {
+        var result = _service.ConfirmDiscount(code);
+        return Clients.All.SendAsync("ReceiveMessage", result);
+    }
+    #endregion
 }
