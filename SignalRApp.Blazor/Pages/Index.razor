@@ -1,0 +1,65 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavManager
+@implements IAsyncDisposable
+
+
+<div class="from-group">
+    <label>
+        Count: <input @bind="numberOfCode"/>
+    </label>
+</div>
+<div class="from-group">
+    <label>
+        Length: <input @bind="length" />
+    </label>
+</div>
+<button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
+
+<hr/>
+<ul>
+    @foreach(string message in codes)
+    {
+        <li>
+            @message
+        </li>
+    }
+</ul>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> codes = new();
+    private ushort? numberOfCode;
+    private byte? length;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri("/discountHub"))
+        .WithAutomaticReconnect().Build();
+        hubConnection.On<ushort, byte>("GetDiscountCode", (numberOfCode, length) =>
+        {            
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("ReceiveMessage", codes);
+        }
+    }
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if(hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
